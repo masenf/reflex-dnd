@@ -57,16 +57,6 @@ class DragDropContext(DndBase):
     # The React component tag.
     tag = "DragDropContext"
 
-    """
-      // optional
-  onBeforeCapture?: OnBeforeCaptureResponder;
-  onBeforeDragStart?: OnBeforeDragStartResponder;
-  onDragStart?: OnDragStartResponder;
-  onDragUpdate?: OnDragUpdateResponder;
-
-  // required
-  onDragEnd: OnDragEndResponder;
-  """
     # Optional: called before an item is picked up.
     on_before_capture: rx.EventHandler[lambda draggable_id, mode: [draggable_id, mode]]
     on_before_drag_start: rx.EventHandler[_on_drag_start_signature]
