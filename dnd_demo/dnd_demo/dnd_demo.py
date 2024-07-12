@@ -24,25 +24,62 @@ class State(rx.State):
     def load_items(self):
         if self.items_json:
             try:
-                self.items = json.loads(self.items_json)
+                items_dict = json.loads(self.items_json)
+                self.items = {
+                    # Turn them into actual Item objects
+                    list_name: [Item(**item) for item in items]
+                    for list_name, items in items_dict.items()
+                }
+                return rx._x.toast.info("Locked and loaded from LocalStorage!")
             except ValueError:
                 pass
 
     def save_items(self):
         self.items_json = json.dumps(self.get_value(self.items))
 
+    def on_close(self, dismissed, toast):
+        if dismissed:
+            print(f"dismiss: {toast}")
+        else:
+            print(f"auto close: {toast}")
+
     def on_drag_end(self, result: DropResult):
         result = DropResult(**result)
         if result.destination is not None:
-            item = self.items[result.source.droppableId].pop(result.source.index)
+            try:
+                item = self.items[result.source.droppableId].pop(result.source.index)
+            except IndexError:
+                return rx._x.toast.error("Invalid source index moving item")
             self._get_list_items(result.destination.droppableId).insert(
                 result.destination.index, item
             )
+            if result.source.droppableId != result.destination.droppableId:
+                yield rx._x.toast.success(
+                    f"Moved {item.text} to {result.destination.droppableId}",
+                    action={
+                        "label": "Undo",
+                        "on_click": State.on_drag_end(
+                            result.copy(
+                                update=dict(source=result.destination, destination=result.source),
+                            ),
+                        ),
+                    },
+                    on_auto_close=State.on_close(False),
+                    on_dismiss=State.on_close(True),
+                )
             return State.save_items
 
     def add_item(self, form_data: dict[str, str]):
-        self._get_list_items(form_data["list_name"]).append(
-            Item(key=str(uuid.uuid4()), text=form_data["item"]),
+        item = Item(key=str(uuid.uuid4()), text=form_data["item"])
+        self._get_list_items(form_data["list_name"]).append(item)
+        yield rx._x.toast.success(
+            f"Created {form_data['item']} in {form_data['list_name']}",
+            action={
+                "label": "Undo",
+                "on_click": State.remove_item(item.key),
+            },
+            on_auto_close=State.on_close(False),
+            on_dismiss=State.on_close(True),
         )
         return State.save_items
 
@@ -51,6 +88,20 @@ class State(rx.State):
             for item in items:
                 if item.key == key:
                     self.items[list_name].remove(item)
+                    yield rx._x.toast.warning(
+                        f"Removed {item.text} from {list_name}",
+                        action={
+                            "label": "Undo",
+                            "on_click": State.add_item(
+                                {
+                                    "list_name": list_name,
+                                    "item": item.text,
+                                }
+                            )
+                        },
+                        on_auto_close=State.on_close(False),
+                        on_dismiss=State.on_close(True),
+                    )
                     return State.save_items
 
 
@@ -128,6 +179,7 @@ def drop_list(name: str) -> rx.Component:
 
 def index() -> rx.Component:
     return rx.vstack(
+        rx.color_mode.button(position="top-right"),
         rx.heading("Reflex Kanban", size="8"),
         drag_drop_context(
             rx.hstack(
@@ -140,7 +192,7 @@ def index() -> rx.Component:
         align_items=["start", "start", "center"],
         padding_x="10px",
         height="100vh",
-    )
+    ), rx._x.toast.provider(close_button=True)
 
 
 # Add state and page to the app.
