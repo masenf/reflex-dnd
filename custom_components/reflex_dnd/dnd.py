@@ -89,7 +89,7 @@ class Droppable(DndBase):
             css = f"css={{{passed_css}}}"
         else:
             css = ""
-        rtag.contents = rx.Var.create(
+        rtag.contents = rx.Var(
             f"{{(provided, snapshot) => <div ref={{provided.innerRef}} {{...provided.droppableProps}} {css}>{self.children[0]}{{provided.placeholder}}</div>}}"
         )
         return rtag
@@ -116,7 +116,7 @@ class Draggable(DndBase):
             css = f"css={{{passed_css}}}"
         else:
             css = ""
-        contents = rx.Var.create(
+        contents = rx.Var(
             f"{{(provided, snapshot) => <div ref={{provided.innerRef}} {{...provided.draggableProps}} {{...provided.dragHandleProps}} {css}>{self.children[0]}</div>}}"
         )
         rtag.contents = contents

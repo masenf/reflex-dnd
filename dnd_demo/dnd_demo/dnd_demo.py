@@ -35,7 +35,7 @@ class State(rx.State):
                 pass
 
     def save_items(self):
-        self.items_json = json.dumps(self.get_value(self.items))
+        self.items_json = rx.utils.format.json_dumps(self.items)
 
     def on_close(self, dismissed, toast):
         if dismissed:
@@ -44,7 +44,6 @@ class State(rx.State):
             print(f"auto close: {toast}")
 
     def on_drag_end(self, result: DropResult):
-        result = DropResult(**result)
         if result.destination is not None:
             try:
                 item = self.items[result.source.droppableId].pop(result.source.index)
