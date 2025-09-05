@@ -1,9 +1,3 @@
 # dnd
 
-A Reflex custom component dnd.
-
-## Installation
-
-```bash
-pip install reflex-dnd
-```
+Drag and drop is now integrated into [reflex-enterprise](https://reflex.dev/docs/enterprise/drag-and-drop/)
